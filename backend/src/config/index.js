@@ -22,6 +22,11 @@ module.exports = {
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 
+  // Support multiple origins (comma-separated)
+  allowedOrigins: (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map(origin => origin.trim()),
+
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
