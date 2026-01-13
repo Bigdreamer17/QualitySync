@@ -108,20 +108,39 @@ async function sendPasswordResetEmail(email, name, token) {
 }
 
 /**
- * Send welcome email after verification
+ * Send welcome email after verification or when user is created by PM
+ * @param {string} email - User's email
+ * @param {string} name - User's name
+ * @param {string} role - User's role (PM, QA, ENG)
+ * @param {string|null} tempPassword - Temporary password (only included when user is created by PM)
  */
-async function sendWelcomeEmail(email, name, role) {
+async function sendWelcomeEmail(email, name, role, tempPassword = null) {
   const roleDescriptions = {
     PM: 'As a Product Manager, you can create and manage test cases, view test results, and convert bugs into test cases.',
     QA: 'As a QA Tester, you can view and execute your assigned test cases, and report unlisted bugs.',
     ENG: 'As an Engineer, you can view failed and escalated tests, and access unlisted bug reports.',
   };
 
+  // Build credentials section if temp password is provided
+  const credentialsSection = tempPassword ? `
+    <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border: 1px solid #f59e0b; margin: 20px 0;">
+      <h3 style="margin: 0 0 10px 0; color: #92400e;">Your Login Credentials</h3>
+      <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+      <p style="margin: 5px 0;"><strong>Temporary Password:</strong> <code style="background: #fff; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${tempPassword}</code></p>
+      <p style="margin: 10px 0 0 0; color: #92400e; font-size: 13px;">Please change your password after your first login for security.</p>
+    </div>
+  ` : '';
+
+  const headerText = tempPassword ? 'Your account has been created!' : 'Your account is verified!';
+  const introText = tempPassword
+    ? 'An administrator has created an account for you on QualitySync.'
+    : 'Your email has been verified and your account is now active.';
+
   try {
     const { data, error } = await resend.emails.send({
       from: config.email.from,
       to: email,
-      subject: 'Welcome to QualitySync!',
+      subject: tempPassword ? 'Your QualitySync Account Has Been Created!' : 'Welcome to QualitySync!',
       html: `
         <!DOCTYPE html>
         <html>
@@ -134,9 +153,10 @@ async function sendWelcomeEmail(email, name, role) {
             <h1 style="color: white; margin: 0; font-size: 28px;">QualitySync</h1>
           </div>
           <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
-            <h2 style="color: #1f2937; margin-top: 0;">Your account is verified!</h2>
+            <h2 style="color: #1f2937; margin-top: 0;">${headerText}</h2>
             <p>Hi ${name},</p>
-            <p>Your email has been verified and your account is now active.</p>
+            <p>${introText}</p>
+            ${credentialsSection}
             <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin: 20px 0;">
               <p style="margin: 0;"><strong>Your Role:</strong> ${role}</p>
               <p style="margin: 10px 0 0 0; color: #6b7280;">${roleDescriptions[role]}</p>
