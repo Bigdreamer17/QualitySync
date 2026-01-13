@@ -152,18 +152,27 @@ export function useAuth() {
   return context;
 }
 
-// Helper to quickly switch roles during development (removed - use real login)
+// Helper to quickly switch roles during development (only works in dev mode)
 export function useDevRoleSwitch() {
   const { login } = useAuth();
 
   const switchRole = async (role: UserRole) => {
-    // In development, you can create test users with these emails
+    // Only available in development mode
+    if (import.meta.env.VITE_APP_ENV !== 'development') {
+      console.warn('Dev role switch is only available in development mode');
+      return;
+    }
+
     const emailMap: Record<UserRole, string> = {
-      PM: 'pm@qualitysync.com',
-      QA: 'qa@qualitysync.com',
-      ENG: 'eng@qualitysync.com',
+      PM: import.meta.env.VITE_DEV_EMAIL_PM || '',
+      QA: import.meta.env.VITE_DEV_EMAIL_QA || '',
+      ENG: import.meta.env.VITE_DEV_EMAIL_ENG || '',
     };
-    await login(emailMap[role], 'Password123');
+    const password = import.meta.env.VITE_DEV_PASSWORD || '';
+
+    if (emailMap[role] && password) {
+      await login(emailMap[role], password);
+    }
   };
 
   return { switchRole };
